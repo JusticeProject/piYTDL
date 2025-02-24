@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Downloader</title>
+        <style>
+            div.ex2 {max-width: 900px; margin: auto;}
+        </style>
+    </head>
+    <body>
+        <div class="ex2">
+            <h1 itemprop="name">Welcome to the YouTube Downloader (YTDL)</h1>
+            <form action="/downloadrequest" method="post">
+                <label>Enter the YouTube url:</label>
+                <br>
+                <input type="text" name="youtubeurl" size="100%">
+                <br>
+                <br>
+                <input type="radio" name="format" value="audio" checked>Audio only
+                <br>
+                <input type="radio" name="format" value="video">Video and audio
+                <br>
+                <br>
+                <input type="submit" value="Download">
+            </form>  
+        </div>
+    </body>
+</html>
