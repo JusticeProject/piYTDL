@@ -185,14 +185,32 @@ func downloaderThread(id string, url string, format string) {
 	for _, line := range lines {
 		if strings.Contains(line, "Merging formats") && strings.Contains(line, "\"") {
 			videoFilename = strings.Split(line, "\"")[1]
-			// TODO: could be .mp4, .webm, .mkv, or other? what if it didn't find the filename?
+			// could be .mp4, .webm, .mkv, or other
 		}
+	}
+
+	// if we didn't find the video filename it may not have downloaded, don't continue
+	if videoFilename == "" {
+		fmt.Println("videoFilename not found")
+		markIdFailed(id)
+		return
 	}
 
 	fmt.Println("found videoFilename", videoFilename)
 
-	// TODO: May need to remove ' " # \ etc from filename first
-	// use: os.Rename()
+	// remove illegal chars from filename first
+	newVideoFilename := removeIllegalChars(videoFilename)
+	if newVideoFilename != videoFilename {
+		err = os.Rename(videoFilename, newVideoFilename)
+		if err != nil {
+			fmt.Println("Could not rename video file:", err)
+			markIdFailed(id)
+			return
+		}
+		videoFilename = newVideoFilename
+	}
+
+	fmt.Println("cleaned up videoFilename", videoFilename)
 
 	if format == "audio" {
 		extension := path.Ext(videoFilename)
@@ -214,12 +232,15 @@ func downloaderThread(id string, url string, format string) {
 		if err != nil {
 			fmt.Println("os.Remove returned", err)
 		}
+		// will be split into a max of 3 substrings
 		nameSplit := strings.SplitN(audioFilename, "/", 3)
 		audioFilename = nameSplit[len(nameSplit)-1]
 		fmt.Println("new audioFilename is", audioFilename)
 		addFilename(id, audioFilename)
 	} else {
-		// TODO: need to remove prefix
+		// will be split into a max of 3 substrings
+		nameSplit := strings.SplitN(videoFilename, "/", 3)
+		videoFilename = nameSplit[len(nameSplit)-1]
 		addFilename(id, videoFilename)
 	}
 
@@ -247,7 +268,7 @@ func onDownloadRequest(w http.ResponseWriter, req *http.Request) {
 	format := req.FormValue("format")
 	id := randomString()
 
-	// TODO: check url, if not the expected YouTube format then redirect to failed.html
+	// we won't check for valid url here, that will be done in downloaderThread
 
 	addToStatusMap(id)
 	go downloaderThread(id, url, format)
@@ -295,6 +316,7 @@ func onFinished(w http.ResponseWriter, req *http.Request) {
 func onGetFile(w http.ResponseWriter, req *http.Request) {
 	// TODO: check for ".."
 	// TODO: check for 3 '/' chars
+	// url will be in the format /getfile/id/filename
 	urlSplit := strings.Split(req.URL.Path, "/")
 	id := urlSplit[2]
 	fmt.Println("file requested for id", id)

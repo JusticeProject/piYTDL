@@ -26,6 +26,17 @@ func randomString() string {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+func removeIllegalChars(filename string) string {
+	// remove ' " # \
+	filename = strings.ReplaceAll(filename, "'", "")
+	filename = strings.ReplaceAll(filename, "\"", "")
+	filename = strings.ReplaceAll(filename, "#", "")
+	filename = strings.ReplaceAll(filename, "\\", "")
+	return filename
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 func getLocalIP() (string, error) {
 	fmt.Println("checking local IP addresses...")
 	addrs, err := net.InterfaceAddrs()
