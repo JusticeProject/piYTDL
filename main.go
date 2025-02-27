@@ -391,11 +391,15 @@ func main() {
 	// removes old files and old entries in the statusMap
 	go cleanupThread()
 
-	// determine our local IP address and port number
-	localIP, err := getLocalIP()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	// determine our local IP address and port number, keep trying if failed
+	localIP := ""
+	for localIP == "" {
+		localIP, err = getLocalIP()
+		if err != nil {
+			fmt.Println(err)
+			time.Sleep(time.Second)
+		}
+		
 	}
 	localIP += ":6514" // add the port number
 	fmt.Println("web server will run on", localIP)
