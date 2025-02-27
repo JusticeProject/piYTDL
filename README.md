@@ -37,7 +37,7 @@ crontab -e
 ```
 Then add this line at the bottom:
 ```bash
-@reboot /home/pi/piYTDL/ytdl &
+@reboot (cd /home/pi/piYTDL/;./ytdl) &
 ```
 Then C+X to save the file
 ### Reboot the Pi
