@@ -25,9 +25,10 @@ var templates = template.Must(template.ParseFiles("templates/downloader.html",
 	"templates/inprogress.html", "templates/finished.html", "templates/failed.html"))
 
 type statusInfo struct {
-	finished bool
-	failed   bool
-	filename string
+	finished   bool
+	failed     bool
+	converting bool
+	filename   string
 }
 
 // the key for the map is the id for the client
@@ -48,7 +49,7 @@ func getDownloadFolder(id string) string {
 
 func addToStatusMap(id string) {
 	mutex.Lock()
-	statusMap[id] = statusInfo{finished: false, failed: false}
+	statusMap[id] = statusInfo{finished: false, failed: false, converting: false}
 	mutex.Unlock()
 }
 
@@ -72,6 +73,20 @@ func removeFromStatusMap(id string) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+func markIdConverting(id string) {
+	mutex.Lock()
+	status, exists := statusMap[id]
+	if exists {
+		status.converting = true
+		statusMap[id] = status
+	} else {
+		statusMap[id] = statusInfo{finished: false, failed: true, converting: false}
+	}
+	mutex.Unlock()
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 func markIdFinished(id string) {
 	mutex.Lock()
 	status, exists := statusMap[id]
@@ -79,7 +94,7 @@ func markIdFinished(id string) {
 		status.finished = true
 		statusMap[id] = status
 	} else {
-		statusMap[id] = statusInfo{finished: false, failed: true}
+		statusMap[id] = statusInfo{finished: false, failed: true, converting: false}
 	}
 	mutex.Unlock()
 }
@@ -93,7 +108,7 @@ func markIdFailed(id string) {
 		status.failed = true
 		statusMap[id] = status
 	} else {
-		statusMap[id] = statusInfo{finished: false, failed: true}
+		statusMap[id] = statusInfo{finished: false, failed: true, converting: false}
 	}
 	mutex.Unlock()
 }
@@ -108,7 +123,7 @@ func getIdStatus(id string) statusInfo {
 	if exists {
 		return status
 	} else {
-		return statusInfo{finished: false, failed: true}
+		return statusInfo{finished: false, failed: true, converting: false}
 	}
 }
 
@@ -213,6 +228,8 @@ func downloaderThread(id string, url string, format string) {
 	fmt.Println("cleaned up videoFilename", videoFilename)
 
 	if format == "audio" {
+		markIdConverting(id)
+		
 		extension := path.Ext(videoFilename)
 		audioFilename := strings.TrimSuffix(videoFilename, extension) + ".mp3"
 		fmt.Println("using audioFilename", audioFilename)
@@ -291,6 +308,11 @@ func onInProgress(w http.ResponseWriter, req *http.Request) {
 	} else {
 		// send them to the same page, they need to keep waiting
 		msg := "Downloading..."
+
+		if status.converting {
+			msg += "done. Converting..."
+		}
+		
 		err := templates.ExecuteTemplate(w, "inprogress.html", templateInfo{MSG: msg})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -384,7 +406,7 @@ func main() {
 	http.HandleFunc("/inprogress.html", onInProgress)
 	http.HandleFunc("/finished.html", onFinished)
 	http.HandleFunc("/getfile/", onGetFile)
-	http.HandleFunc("/error.html", onFailed)
+	http.HandleFunc("/failed.html", onFailed)
 
 	// start serving
 	err = http.ListenAndServe(localIP, nil)
