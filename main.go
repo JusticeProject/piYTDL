@@ -25,10 +25,11 @@ var templates = template.Must(template.ParseFiles("templates/downloader.html",
 	"templates/inprogress.html", "templates/finished.html", "templates/failed.html"))
 
 type statusInfo struct {
-	finished   bool
-	failed     bool
-	converting bool
-	filename   string
+	finished	bool
+	failed		bool
+	converting	bool
+	filename	string
+	errMsg		string
 }
 
 // the key for the map is the id for the client
@@ -101,14 +102,15 @@ func markIdFinished(id string) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-func markIdFailed(id string) {
+func markIdFailed(id string, errMsg string) {
 	mutex.Lock()
 	status, exists := statusMap[id]
 	if exists {
 		status.failed = true
+		status.errMsg = errMsg
 		statusMap[id] = status
 	} else {
-		statusMap[id] = statusInfo{finished: false, failed: true, converting: false}
+		statusMap[id] = statusInfo{finished: false, failed: true, converting: false, errMsg: errMsg}
 	}
 	mutex.Unlock()
 }
@@ -176,7 +178,7 @@ func downloaderThread(id string, url string, format string) {
 	folderPath := getDownloadFolder(id)
 	err := os.MkdirAll(folderPath, 0777)
 	if err != nil {
-		markIdFailed(id)
+		markIdFailed(id, err.Error())
 		fmt.Println(err)
 		return
 	}
@@ -184,11 +186,11 @@ func downloaderThread(id string, url string, format string) {
 	fmt.Println("created folder", folderPath)
 
 	// download video to folderPath from above
-	outBytes, err := exec.Command("bash", "helper.sh", url, folderPath).Output()
+	outBytes, err := exec.Command("bash", "helper.sh", url, folderPath).CombinedOutput()
 	if err != nil {
 		fmt.Println("helper.sh returned an error:", err)
 		fmt.Printf("additional info: %s\n", outBytes)
-		markIdFailed(id)
+		markIdFailed(id, string(outBytes))
 		return
 	}
 
@@ -207,7 +209,7 @@ func downloaderThread(id string, url string, format string) {
 	// if we didn't find the video filename it may not have downloaded, don't continue
 	if videoFilename == "" {
 		fmt.Println("videoFilename not found")
-		markIdFailed(id)
+		markIdFailed(id, "videoFilename not found")
 		return
 	}
 
@@ -219,7 +221,7 @@ func downloaderThread(id string, url string, format string) {
 		err = os.Rename(videoFilename, newVideoFilename)
 		if err != nil {
 			fmt.Println("Could not rename video file:", err)
-			markIdFailed(id)
+			markIdFailed(id, err.Error())
 			return
 		}
 		videoFilename = newVideoFilename
@@ -235,11 +237,11 @@ func downloaderThread(id string, url string, format string) {
 		fmt.Println("using audioFilename", audioFilename)
 
 		// ffmpeg -i "downloads/id/blah.webm" -b:a 128k "downloads/id/blah.mp3"
-		outBytes, err = exec.Command("ffmpeg", "-i", videoFilename, "-b:a", "128k", audioFilename).Output()
+		outBytes, err = exec.Command("ffmpeg", "-i", videoFilename, "-b:a", "128k", audioFilename).CombinedOutput()
 		if err != nil {
 			fmt.Println("ffmpeg returned error:", err)
 			fmt.Printf("additional info: %s\n", outBytes)
-			markIdFailed(id)
+			markIdFailed(id, string(outBytes))
 			return
 		}
 
@@ -302,7 +304,7 @@ func onInProgress(w http.ResponseWriter, req *http.Request) {
 	status := getIdStatus(id)
 
 	if status.failed {
-		http.Redirect(w, req, "/failed.html", http.StatusFound)
+		http.Redirect(w, req, "/failed.html?id="+id, http.StatusFound)
 	} else if status.finished {
 		http.Redirect(w, req, "/finished.html?id="+id, http.StatusFound)
 	} else {
@@ -347,7 +349,7 @@ func onGetFile(w http.ResponseWriter, req *http.Request) {
 	entries, err := os.ReadDir(folder)
 
 	if err != nil {
-		err := templates.ExecuteTemplate(w, "failed.html", templateInfo{MSG: err.Error()})
+		err := templates.ExecuteTemplate(w, "failed.html?id="+id, templateInfo{MSG: err.Error()})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -372,7 +374,10 @@ func onGetFile(w http.ResponseWriter, req *http.Request) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 func onFailed(w http.ResponseWriter, req *http.Request) {
-	err := templates.ExecuteTemplate(w, "failed.html", nil)
+	params := req.URL.Query()
+	id := params.Get("id")
+	errMsg := getIdStatus(id).errMsg
+	err := templates.ExecuteTemplate(w, "failed.html", templateInfo{MSG: errMsg})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
