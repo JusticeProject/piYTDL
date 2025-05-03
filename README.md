@@ -18,20 +18,23 @@ sudo ufw status verbose
 ```bash
 sudo apt install git
 git clone https://github.com/JusticeProject/piYTDL.git
-cd piYTDL
-chmod +x helper.sh
-git clone https://github.com/ytdl-org/youtube-dl.git
 ```
-## Install the Go compiler, compile the code
+## Install the Go compiler, compile the code in the piYTDL directory
 ```bash
 sudo apt install gccgo
 gccgo main.go utilities.go -o ytdl
 ```
-## Install ffmpeg
+## Install the necessary libraries, starting in /home/pi
 ```bash
 sudo apt install ffmpeg
+sudo apt install python3-pip
+sudo apt install python3-venv
+python -m venv pythonenv
+source pythonenv/bin/activate
+pip install yt-dlp
 ```
 ## Set it to run at boot
+You could also check that the script helper.sh is executable
 ```bash
 crontab -e
 ```
