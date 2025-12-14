@@ -1,7 +1,7 @@
 # piYTDL
 YT downloader for Raspberry pi
 
-# Installation
+# Installation on the Raspberry pi
 ## Set up the Firewall
 ```bash
 sudo apt install ufw
@@ -47,4 +47,10 @@ Then C+X to save the file
 ```bash
 sudo reboot now
 ```
-### Open a web browser on a different computer and navigate to raspberrypi.local:6514/downloader.html
+# Setup on a 2nd computer
+For a one-time download, open a web browser on the 2nd computer and navigate to raspberrypi.local:6514/downloader.html
+## If using the automated script, install the necessary libraries
+```bash
+source pythonenv/bin/activate
+pip install beautifulsoup4
+```
