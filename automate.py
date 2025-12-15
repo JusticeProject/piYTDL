@@ -4,9 +4,7 @@ from bs4 import BeautifulSoup
 from urllib.request import urlretrieve
 import sys
 import time
-
-# TODO: put all urls in a file, give instructions in readme
-video_url = "https://www.youtube.com/watch?v=I0SVd_Q5wIg"
+import random
 
 # first check that the web server is up and running
 BASE_URL = "http://pizero2.local:6514"
@@ -16,31 +14,51 @@ if (response.status != 200):
     print(f"home page not up, response: {response.status}")
     sys.exit()
 
-# TODO: loop through our list of videos, wait 5+ minutes between each one
-# send the request for a new download
-REQUEST_URL = BASE_URL + "/downloadrequest"
-formValues = {"youtubeurl" : video_url, "format" : "audio"}
-encodedFormValues = urlencode(formValues).encode("utf-8")
-response = urlopen(REQUEST_URL, data=encodedFormValues)
-newUrl = response.url
+# read in the list of urls with titles
+fd = open("urlList.txt", "r")
+lines = fd.readlines()
+fd.close()
 
-# wait for the download to finish
-while ("inprogress" in newUrl):
-    print("waiting...") # TODO: remove this line
-    time.sleep(5)
-    response = urlopen(newUrl)
+for line in lines:
+    # extract the url and title, but clean up the title
+    line_split = line.strip().split(",", maxsplit=1)
+    video_url = line_split[0]
+    title = line_split[1].strip("'\"!?:;/\\*")
+    title = title.replace("..", "")
+    print(f"requesting url {video_url}")
+
+    # send the request for a new download, it's a POST with form values
+    REQUEST_URL = BASE_URL + "/downloadrequest"
+    formValues = {"youtubeurl" : video_url, "format" : "audio"}
+    encodedFormValues = urlencode(formValues).encode("utf-8")
+    response = urlopen(REQUEST_URL, data=encodedFormValues)
+    # grab the new url since it redirected us
     newUrl = response.url
 
-# TODO: if it failed try again later? add to a list of failures?
-if ("finished" in newUrl):
-    print("finished!") # TODO: remove this line
-    response = urlopen(newUrl)
-    bs = BeautifulSoup(response.read(), "html.parser")
-    aTag = bs.find("a")
-    downloadUrl = BASE_URL + aTag["href"]
-    # TODO: need to remove certain characters that don't play nicely with the filesystem? make sure the filename is not already being used?
-    # has the format: "/getfile/2MQ3SFKTYC17CQA0ETA524USU7/Alone_in_Kyoto.mp3"
-    filename = aTag["href"].split("/", 3)[-1]
-    print(downloadUrl)
-    print(filename)
-    urlretrieve(downloadUrl, filename)
+    # wait for the download to finish, each time we call urlopen it might still be inprogress or it could
+    # have redirected us to the next page, so we check the updated url to see which it is
+    while ("inprogress" in newUrl):
+        time.sleep(5)
+        response = urlopen(newUrl)
+        newUrl = response.url
+
+    # no longer inprogress, so check for success or failure
+    if ("finished" in newUrl):
+        response = urlopen(newUrl)
+        bs = BeautifulSoup(response.read(), "html.parser")
+        aTag = bs.find("a")
+        downloadUrl = BASE_URL + aTag["href"]
+        # TODO: make sure the filename is not already being used?
+        filename = title + ".mp3"
+        print(f"grabbing {downloadUrl} and saving to {filename}")
+        urlretrieve(downloadUrl, filename)
+    else:
+        # TODO: if it failed try again later? add to a list of failures?
+        print("failed !!!! **** error message:")
+        response = urlopen(newUrl)
+        bs = BeautifulSoup(response.read(), "html.parser")
+        error_msg = bs.find("p").contents[0]
+        print(error_msg)
+
+    time.sleep(random.randint(5, 30))
+    time.sleep(5 * 60)

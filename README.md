@@ -33,6 +33,10 @@ python -m venv pythonenv
 source pythonenv/bin/activate
 pip install yt-dlp
 ```
+## yt-dlp can be upgraded later if a new version becomes available
+```bash
+pip install --upgrade yt-dlp
+```
 ## Set it to run at boot
 You could also check that the script helper.sh is executable
 ```bash
@@ -54,3 +58,8 @@ For a one-time download, open a web browser on the 2nd computer and navigate to 
 source pythonenv/bin/activate
 pip install beautifulsoup4
 ```
+The file urlList.txt uses this format for each line:
+```bash
+url,title
+```
+The script automate.py will download from each url in urlList.txt and save it locally using the given title.
