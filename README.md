@@ -2,15 +2,35 @@
 YT downloader for Raspberry pi
 
 # Installation on the Raspberry pi
-## Set up the Firewall
+## Turn off WiFi if only using a wired connection
+```bash
+sudo nmcli radio wifi off
+sudo reboot now
+```
+Verify that it's off with
+```bash
+nmcli radio wifi
+ifconfig
+```
+## Make sure the Pi is up to date
+```bash
+sudo apt update
+sudo apt full-upgrade
+sudo reboot now
+```
+## Set up the Firewall, allow SSH in, HTTP/HTTPS out, DNS out, NTP (network time protocol) out
 ```bash
 sudo apt install ufw
 sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow ssh
-sudo ufw limit ssh/tcp
+sudo ufw default deny outgoing
+sudo ufw allow in ssh
+sudo ufw limit in ssh
 sudo ufw enable
-sudo ufw allow 6514/tcp
+sudo ufw allow in 6514/tcp
+sudo ufw allow out http
+sudo ufw allow out https
+sudo ufw allow out dns
+sudo ufw allow out ntp
 sudo ufw logging off
 sudo ufw status verbose
 ```
@@ -36,6 +56,14 @@ pip install yt-dlp
 ## yt-dlp can be upgraded later if a new version becomes available
 ```bash
 pip install --upgrade yt-dlp
+```
+## Require a password for sudo access
+```bash
+sudo visudo /etc/sudoers.d/010_pi-nopasswd
+```
+Change the line to be:
+```bash
+pi ALL=(ALL) PASSWD: ALL
 ```
 ## Set it to run at boot
 You could also check that the script helper.sh is executable

@@ -7,7 +7,7 @@ import time
 import random
 
 # first check that the web server is up and running
-BASE_URL = "http://pizero2.local:6514"
+BASE_URL = "http://pizero2.attlocal.net:6514"
 HOME_URL = BASE_URL + "/downloader.html"
 response = urlopen(HOME_URL)
 if (response.status != 200):
