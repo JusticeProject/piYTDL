@@ -31,6 +31,7 @@ sudo ufw allow out http
 sudo ufw allow out https
 sudo ufw allow out dns
 sudo ufw allow out ntp
+sudo ufw insert 1 deny out from any to 192.168.1.0/24
 sudo ufw logging off
 sudo ufw status verbose
 ```
@@ -56,6 +57,10 @@ pip install yt-dlp
 ## yt-dlp can be upgraded later if a new version becomes available
 ```bash
 pip install --upgrade yt-dlp
+```
+## Make the password more secure
+```bash
+passwd
 ```
 ## Require a password for sudo access
 ```bash
