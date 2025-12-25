@@ -19,6 +19,8 @@ sudo apt full-upgrade
 sudo reboot now
 ```
 ## Set up the Firewall, allow SSH in, HTTP/HTTPS out, DNS out, NTP (network time protocol) out
+Since we are blocking traffic on the LAN, we need to figure out the subnet. ifconfig or nmcli can give the subnet for ipv4 and ipv6.
+Replace 1234:1234:1234:1234::/64 with the appropriate ipv6 subnet. Note that ipv6 rules must be inserted after all ipv4 rules.
 ```bash
 sudo apt install ufw
 sudo ufw default deny incoming
@@ -29,9 +31,10 @@ sudo ufw enable
 sudo ufw allow in 6514/tcp
 sudo ufw allow out http
 sudo ufw allow out https
-sudo ufw allow out dns
 sudo ufw allow out ntp
 sudo ufw insert 1 deny out from any to 192.168.1.0/24
+sudo ufw insert 7 deny out from any to 1234:1234:1234:1234::/64
+sudo ufw insert 1 allow out dns
 sudo ufw logging off
 sudo ufw status verbose
 ```
