@@ -84,8 +84,7 @@ for line in lines:
         error_msg = bs.find("p").contents[0]
         print(error_msg)
 
-    time.sleep(random.randint(5, 30))
-    time.sleep(5 * 60)
+    time.sleep(random.randint(15 * 60, 20 * 60))
 
 if (len(failures) > 0):
     print("\nThese failed:")
