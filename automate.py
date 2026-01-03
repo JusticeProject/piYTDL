@@ -5,7 +5,6 @@ from urllib.request import urlretrieve
 import sys
 import os
 import time
-import random
 
 ###################################################################################################
 
@@ -39,6 +38,9 @@ fd = open("urlList.txt", "r")
 lines = fd.readlines()
 fd.close()
 failures = []
+
+# sleep time
+SLEEP_MINUTES = 30
 
 for line in lines:
     line_strip = line.strip()
@@ -83,8 +85,13 @@ for line in lines:
         bs = BeautifulSoup(response.read(), "html.parser")
         error_msg = bs.find("p").contents[0]
         print(error_msg)
+        #sys.exit()
 
-    time.sleep(random.randint(15 * 60, 20 * 60))
+    print(f"Sleeping for {SLEEP_MINUTES} minutes")
+    time.sleep(SLEEP_MINUTES * 60)
+    SLEEP_MINUTES += 30
+    if (SLEEP_MINUTES > 180):
+        SLEEP_MINUTES = 30
 
 if (len(failures) > 0):
     print("\nThese failed:")
