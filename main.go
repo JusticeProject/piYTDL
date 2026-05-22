@@ -203,6 +203,8 @@ func downloaderThread(id string, url string, format string) {
 		if strings.Contains(line, "Merging formats") && strings.Contains(line, "\"") {
 			videoFilename = strings.Split(line, "\"")[1]
 			// could be .mp4, .webm, .mkv, or other
+		} else if strings.Contains(line, "[download] Destination") {
+			videoFilename = strings.Split(line, " ")[2]
 		}
 	}
 
