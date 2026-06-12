@@ -365,8 +365,8 @@ func onGetFile(w http.ResponseWriter, req *http.Request) {
 			fmt.Println("serving", relativePath)
 			http.ServeFile(w, req, relativePath)
 			// remove the file and folder now that it has been sent to client
-			os.RemoveAll(folder)
-			removeFromStatusMap(id)
+			//os.RemoveAll(folder)
+			//removeFromStatusMap(id)
 			// in case there is more than one file, return right away
 			return
 		}
