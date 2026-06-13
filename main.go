@@ -351,7 +351,7 @@ func onGetFile(w http.ResponseWriter, req *http.Request) {
 	entries, err := os.ReadDir(folder)
 
 	if err != nil {
-		err := templates.ExecuteTemplate(w, "failed.html?id="+id, templateInfo{MSG: err.Error()})
+		err := templates.ExecuteTemplate(w, "failed.html", templateInfo{MSG: err.Error()})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
